@@ -1,0 +1,28 @@
+{
+  "name": "nicetoolkit",
+  "version": "1.0.0",
+  "description": "toolkit",
+  "main": "main.js",
+  "dependencies": {
+    "electron": "^1.8.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "npm run test",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YongdongHe/NiceToolkit.git"
+  },
+  "keywords": [
+    "android",
+    "toolkit"
+  ],
+  "author": "realhe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YongdongHe/NiceToolkit/issues"
+  },
+  "homepage": "https://github.com/YongdongHe/NiceToolkit#readme"
+}
