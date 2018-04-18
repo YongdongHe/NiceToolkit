@@ -27,6 +27,8 @@ const {app, BrowserWindow} = require('electron')
       // 与此同时，你应该删除相应的元素。
       win = null
     })
+
+    
   }
   
   // Electron 会在初始化后并准备
