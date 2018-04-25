@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>NiceToolKit</title>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 </head>
 
@@ -28,6 +28,7 @@
     <div id="shortbut-box">
         <p v-on:click="openSettings">open settings</p>
         <p v-on:click="takeScreenshot">screenshot</p>
+        <p v-on:click="inspectWebview">inspect</p>
     </div>
 
 </body>
@@ -90,6 +91,9 @@
                     console.log(error);
                 });
                 
+            },
+            inspectWebview:function(){
+                window.open('chrome://inspect/#devices');
             }
         } 
     })
@@ -108,7 +112,12 @@
     })
 
     function getAdbCmd(deviceId,cmd){
-        return "adb -s " + deviceId + " " + cmd;
+        if(deviceId != ""){
+            return "adb -s " + deviceId + " " + cmd;
+        }else{
+            return "adb " +  cmd;
+        }
+       
     }
 
 
