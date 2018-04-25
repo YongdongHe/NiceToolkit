@@ -13,21 +13,23 @@
     </div>
     <div id="devices-selector">
         <div v-on:click="refresh">refresh device list</div>
-        <select v-model="selectedDevice" >
-            <option v-for="device in devices" @change="selectDevice">{{device.name}}</option>
+        <select v-model="selectedDevice"  @change="onDeviceChanged">
+            <option v-for="device in devices" v-bind:value="device.id">{{device.name}}</option>
         </select>
-        <span>Selected: {{ selectedDevice.name }}</span>
+        <span>Selected: {{ selectedDevice }}</span>
     </div>
 
-    
-    <h1>Hello World!</h1>
-    We are using node
-    <script>document.write(process.versions.node)</script>, Chrome
-    <script>document.write(process.versions.chrome)</script>, and Electron
-    <script>document.write(process.versions.electron)</script>.
     <div id="drag-file">
-        <p>Install APK</p>
+        <div class="dropbox" >
+            <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
+        </div>
     </div>
+
+    <div id="shortbut-box">
+        <p v-on:click="openSettings">open settings</p>
+        <p v-on:click="takeScreenshot">screenshot</p>
+    </div>
+
 </body>
 <style>
     #drag-file {
@@ -40,7 +42,7 @@
 </style>
 
 <script>
-    var test = new Vue({
+    let test = new Vue({
         el: '#test-btn',
         data: {
             test_tips: 'TEST BUTTON',
@@ -50,24 +52,66 @@
         } 
     })
 
-    var app = new Vue({
+    let app = new Vue({
         el: '#devices-selector',
         data: {
             message: 'Hello Vue!',
-            selectedDevice: "No device",
+            selectedDevice: "",
             devices: []
         },
         methods:{
             refresh: refresh_devices,
-            selectDevice : function(device) {
-                this.selectedDevice = device;
-                console.log(device);
+            onDeviceChanged:function(device) {
+                console.log(this.selectedDevice);
+            }
+        } 
+    })
+
+    let shortcutBox = new Vue({
+        el: '#shortbut-box',
+        data: {
+            test_tips: 'TEST BUTTON',
+        },
+        methods:{
+            openSettings: function () {
+                let shell = getAdbCmd(app.selectedDevice,"shell am start com.android.settings/.DevelopmentSettings");
+                runCmd(shell).catch(function(error) {
+                    console.log(error);
+                });
+            },
+            takeScreenshot:function(){
+                const electronApp = require('electron').remote.app;
+                let runningPath = electronApp.getAppPath();
+                console.log(runningPath);
+                let pcStoragePath = "C:\\Users\\realhe.TENCENT\\Desktop\\screen.png"
+                let shellScreen = getAdbCmd(app.selectedDevice,"shell screencap -p /sdcard/test.png");
+                let shellPull = getAdbCmd(app.selectedDevice,"pull /sdcard/test.png " + pcStoragePath);
+                runCmdArray([shellScreen,shellPull]).catch(function(error) {
+                    console.log(error);
+                });
                 
             }
         } 
     })
 
-    
+    let fileDrag = new Vue({
+        el: '#drag-file',
+        methods:{
+            onFileSelected:function(event) {
+                console.log(event);       
+                for (let f of event.target.files) {
+                    console.log('File(s) you dragged here: ', f.path)
+        
+                }
+            }
+        }
+    })
+
+    function getAdbCmd(deviceId,cmd){
+        return "adb -s " + deviceId + " " + cmd;
+    }
+
+
     function runCmd(cmd) {
         return new Promise((resolve, reject) => {
             let exec = require('child_process').exec
@@ -81,6 +125,34 @@
         });
     }
 
+     function runCmdArray(cmds) {
+        return new Promise((resolve, reject) => {
+            console.log("runCmdArray");
+            
+            let exec = require('child_process').exec
+            function _runCmds(_cmds){
+                console.log(_cmds);
+                if(_cmds.length <= 0){
+                    resolve("Execute all cmd finished.");
+                    return;
+                }
+                let cmd = _cmds.shift()
+                console.log("exec");
+                console.log(cmd);
+                exec(cmd, function (err, stdout, stderr) {
+                    if(err){
+                        reject(stderr);
+                    }else{
+                        console.log(stdout);
+                        _runCmds(_cmds);
+                    }
+                });
+            }
+            _runCmds(cmds);
+            
+        });
+    }
+
     function test_fn() {
         console.log(app.selectedDevice);
         
@@ -89,16 +161,15 @@
     async function refresh_devices() {
         let res = await runCmd("adb devices");
         console.log(res);
-        var lines = res.split(/[\r\n]+/g);
-        var devices = [];
-        var deviceIds = [];
+        let lines = res.split(/[\r\n]+/g);
+        let devices = [];
+        let deviceIds = [];
         lines.forEach(line => {
             let deviceId = line.split(/[\s,;\t\n]+/)[0];
             if( deviceId  == "" || deviceId == "List" ){
                 return;
             }
             deviceIds.push(deviceId);
-            console.log(line.split(/[\s,;\t\n]+/)[0]);
         });
         
         app.selectedDevice = "正在刷新"
@@ -108,42 +179,10 @@
         deviceIds.forEach(async function(deviceId){
             let deviceMsg = await runCmd("adb -s " + deviceId + ' shell  "cat /system/build.prop | grep "product""');
             let deviceName = (deviceMsg.split(/[\r\n]+/g)[0]).split("=")[1];
-            console.log(deviceName);
             app.devices.push({ id : deviceId , name :deviceName})
-            console.log(app.devices);
         }); 
     }
 
-    (function () {
-        var holder = document.getElementById('drag-file');
-
-        holder.ondragover = () => {
-            return false;
-        };
-
-        holder.ondragleave = () => {
-            return false;
-        };
-
-        holder.ondragend = () => {
-            return false;
-        };
-
-        holder.ondrop = (e) => {
-            e.preventDefault();
-
-            for (let f of e.dataTransfer.files) {
-                // console.log('File(s) you dragged here: ', f.path)
-                let exec = require('child_process').exec
-                let cmdStr = "adb push " + f.path
-                exec(cmdStr, function (err, stdout, stderr) {
-                    console.log(stdout);
-                });
-            }
-
-            return false;
-        };
-    })();
 
     
 </script>
