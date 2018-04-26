@@ -20,27 +20,51 @@
     </div>
 
     <div id="drag-file">
-        <div class="dropbox" >
+        <div class="shortcut-item" >
             <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
         </div>
     </div>
 
-    <div id="shortbut-box">
-        <p v-on:click="openSettings">open settings</p>
-        <p v-on:click="takeScreenshot">screenshot</p>
-        <p v-on:click="inspectWebview">inspect</p>
-        <p v-on:click="recordScreen">screenrecord</p>
+    <div id="shortcut-box">
+        <p class="shortcut-item" v-on:click="openSettings">open settings</p>
+        <p class="shortcut-item" v-on:click="takeScreenshot">screenshot</p>
+        <p class="shortcut-item" v-on:click="inspectWebview">inspect</p>
+        <p class="shortcut-item" v-on:click="recordScreen">screenrecord</p>
+    </div>
+
+
+    <div id="preview">
+        <img id="preview-img" v-bind:src="previewImgPath" alt="">
+        <p>{{previewDes}}</p>
     </div>
 
     <a href="chrome://inspect/#devices"></a>
 </body>
 <style>
-    #drag-file {
-        background-color: blue;
-        color: white;
-        text-align: center;
+
+    .shortcut-item{
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        color: rgb(130, 130, 207);
+        justify-content:center;
+        align-items:center;
+        font-family: Verdana, Tahoma, sans-serif;
         width: 300px;
-        height: 300px;
+        height: 100px;
+    }
+
+    .shortcut-item:hover{
+        background-color: rgb(130, 130, 207);
+        color: white;
+    }
+
+    #preview-img{
+        position: absolute;
+        top: 200px;
+        left:300px;
+        width:300px;
+        height:600px;
     }
 </style>
 
@@ -70,8 +94,16 @@
         } 
     })
 
+    let preview = new Vue({
+        el: '#preview',
+        data:{
+            previewImgPath:"",
+            previewDes:""
+        }
+    })
+
     let shortcutBox = new Vue({
-        el: '#shortbut-box',
+        el: '#shortcut-box',
         data: {
             test_tips: 'TEST BUTTON',
         },
@@ -86,12 +118,16 @@
                 const electronApp = require('electron').remote.app;
                 let runningPath = electronApp.getAppPath();
                 console.log(runningPath);
-                let pcStoragePath = "C:\\Users\\realhe.TENCENT\\Desktop\\screen.png"
+                let pcStoragePath = spawnFilePath("screen" + getCurrentFormatTime() + ".png");
+                console.log(pcStoragePath);
                 let shellScreen = getAdbCmd(app.selectedDevice,"shell screencap -p /sdcard/test.png");
                 let shellPull = getAdbCmd(app.selectedDevice,"pull /sdcard/test.png " + pcStoragePath);
                 runCmdArray([shellScreen,shellPull])
                 .then(function(res){
                     console.log(res);
+                    preview.previewImgPath = "";
+                    preview.previewImgPath = pcStoragePath;
+                    preview.previewDes = "hhh";
                 })
                 .catch(function(error) {
                     console.error(error);
@@ -173,7 +209,7 @@
             function _runCmds(_cmds){
                 console.log(_cmds);
                 if(_cmds.length <= 0){
-                    reject("Execute all cmd finished.");
+                    resolve("Execute all cmd finished.");
                     return;
                 }
                 let cmd = _cmds.shift()
@@ -223,5 +259,37 @@
         }); 
     }
 
+    function spawnFilePath(fileName) {
+        const electronApp = require('electron').remote.app;
+        let runningPath = electronApp.getAppPath();
+        return runningPath + "\\temp\\" + fileName;
+    }
+
+
+    function getCurrentFormatTime(){
+        let data = new Date();
+        Date.prototype.format = function (fmt) {
+            var o = {
+                "M+": this.getMonth() + 1, //月份
+                "d+": this.getDate(), //日
+                "h+": this.getHours(), //小时
+                "m+": this.getMinutes(), //分
+                "s+": this.getSeconds(), //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            }
+            for (var k in o) {
+                if (new RegExp("(" + k + ")").test(fmt)) {
+                fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ?
+                    (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                }
+            }
+            return fmt;
+        }
+        return data.format("yyyyMMddhhmmss");
+    }
 </script>
 </html>
