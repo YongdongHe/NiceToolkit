@@ -29,8 +29,10 @@
         <p v-on:click="openSettings">open settings</p>
         <p v-on:click="takeScreenshot">screenshot</p>
         <p v-on:click="inspectWebview">inspect</p>
+        <p v-on:click="recordScreen">screenrecord</p>
     </div>
 
+    <a href="chrome://inspect/#devices"></a>
 </body>
 <style>
     #drag-file {
@@ -87,13 +89,42 @@
                 let pcStoragePath = "C:\\Users\\realhe.TENCENT\\Desktop\\screen.png"
                 let shellScreen = getAdbCmd(app.selectedDevice,"shell screencap -p /sdcard/test.png");
                 let shellPull = getAdbCmd(app.selectedDevice,"pull /sdcard/test.png " + pcStoragePath);
-                runCmdArray([shellScreen,shellPull]).catch(function(error) {
-                    console.log(error);
+                runCmdArray([shellScreen,shellPull])
+                .then(function(res){
+                    console.log(res);
+                })
+                .catch(function(error) {
+                    console.error(error);
                 });
                 
             },
             inspectWebview:function(){
-                window.open('chrome://inspect/#devices');
+                // window.open('chrome://inspect/#devices');
+                
+                var shell = require('electron').shell;
+                shell.openExternal('chrome_dev.html');
+            },
+            recordScreen:function(){
+        
+                let child_process = require('child_process')
+                let shell = "adb shell screenrecord /sdcard/screen.mp4";
+                let adbProcess = child_process.spawn("adb",["shell","screenrecord","/sdcard/demo.mp4"])
+                adbProcess.stdout.on('data', (data) => {
+                    console.log(data.toString());
+                });
+
+                adbProcess.stderr.on('data', (data) => {
+                    console.log(data.toString());
+                });
+
+                adbProcess.on('exit', (code) => {
+                    console.log(`视频录制结束：${code}`);
+                });
+                console.log(adbProcess);
+                setTimeout(function() {
+                    console.log(adbProcess);
+                    adbProcess.kill();
+                },5000);
             }
         } 
     })
@@ -142,7 +173,7 @@
             function _runCmds(_cmds){
                 console.log(_cmds);
                 if(_cmds.length <= 0){
-                    resolve("Execute all cmd finished.");
+                    reject("Execute all cmd finished.");
                     return;
                 }
                 let cmd = _cmds.shift()
@@ -192,8 +223,5 @@
         }); 
     }
 
-
-    
 </script>
-
 </html>
