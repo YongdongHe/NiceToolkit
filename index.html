@@ -38,25 +38,26 @@
             </div>
             <div id="toolbox">
                 <div id="devices-selector">
-                        <div v-on:click="refresh">refresh device list</div>
-                        <select v-model="selectedDevice"  @change="onDeviceChanged">
-                            <option v-for="device in devices" v-bind:value="device.id">{{device.name}}</option>
-                        </select>
-                        <span>Selected: {{ selectedDevice }}</span>
-                    </div>
+                    <span class="h1-theme">{{ selectedDeviceName }}</span>
+                    <div v-on:click="refresh">refresh device list</div>
+                    <select v-model="selectedDeviceId"  @change="onDeviceChanged">
+                        <option v-for="device in devices" v-bind:value="device.id">{{device.name}}</option>
+                    </select>
+                    
+                </div>
                 
-                    <div id="drag-file">
-                        <div class="shortcut-item" >
-                            <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
-                        </div>
+                <div id="drag-file">
+                    <div class="shortcut-item" >
+                        <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
                     </div>
-                
-                    <div id="shortcut-box">
-                        <p class="shortcut-item" v-on:click="openSettings">open settings</p>
-                        <p class="shortcut-item" v-on:click="takeScreenshot">screenshot</p>
-                        <p class="shortcut-item" v-on:click="inspectWebview">inspect</p>
-                        <p class="shortcut-item" v-on:click="recordScreen">screenrecord</p>
-                    </div>
+                </div>
+            
+                <div id="shortcut-box">
+                    <p class="shortcut-item" v-on:click="openSettings">open settings</p>
+                    <p class="shortcut-item" v-on:click="takeScreenshot">screenshot</p>
+                    <p class="shortcut-item" v-on:click="inspectWebview">inspect</p>
+                    <p class="shortcut-item" v-on:click="recordScreen">screenrecord</p>
+                </div>
             </div>
             <div id="preview">
                 <img id="preview-img" v-bind:src="previewImgPath" alt="">
@@ -70,8 +71,8 @@
 
 <script>
     particleground(document.getElementById('drawer-bg'), {
-    dotColor: '#6f66dc',
-    lineColor: '#6f66dc'
+        dotColor: '#6f66dc',
+        lineColor: '#6f66dc'
     });
 
     let winController = new Vue({
@@ -99,14 +100,14 @@
     let app = new Vue({
         el: '#devices-selector',
         data: {
-            message: 'Hello Vue!',
-            selectedDevice: "",
+            selectedDeviceId: "",
+            selectedDeviceName: "No Device",
             devices: []
         },
         methods:{
-            refresh: refresh_devices,
+            refresh: openDevicesSelector,
             onDeviceChanged:function(device) {
-                console.log(this.selectedDevice);
+                console.log(this.selectedDeviceId);
             }
         } 
     })
@@ -251,29 +252,77 @@
         
     }
 
-    async function refresh_devices() {
-        let res = await runCmd("adb devices");
-        console.log(res);
-        let lines = res.split(/[\r\n]+/g);
-        let devices = [];
-        let deviceIds = [];
-        lines.forEach(line => {
-            let deviceId = line.split(/[\s,;\t\n]+/)[0];
-            if( deviceId  == "" || deviceId == "List" ){
-                return;
-            }
-            deviceIds.push(deviceId);
-        });
+    async function openDevicesSelector() {
+        // let res = await runCmd("adb devices");
+        // console.log(res);
+        // let lines = res.split(/[\r\n]+/g);
+        // let devices = [];
+        // let deviceIds = [];
+        // lines.forEach(line => {
+        //     let deviceId = line.split(/[\s,;\t\n]+/)[0];
+        //     if( deviceId  == "" || deviceId == "List" ){
+        //         return;
+        //     }
+        //     deviceIds.push(deviceId);
+        // });
         
-        app.selectedDevice = "正在刷新"
-        app.devices = []
+        // app.selectedDevice = "正在刷新"
+        // app.devices = []
 
-        //新增
-        deviceIds.forEach(async function(deviceId){
-            let deviceMsg = await runCmd("adb -s " + deviceId + ' shell  "cat /system/build.prop | grep "product""');
-            let deviceName = (deviceMsg.split(/[\r\n]+/g)[0]).split("=")[1];
-            app.devices.push({ id : deviceId , name :deviceName})
-        }); 
+        // //新增
+        // deviceIds.forEach(async function(deviceId){
+        //     let deviceMsg = await runCmd("adb -s " + deviceId + ' shell  "cat /system/build.prop | grep "product""');
+        //     let deviceName = (deviceMsg.split(/[\r\n]+/g)[0]).split("=")[1];
+        //     app.devices.push({ id : deviceId , name :deviceName})
+        // }); 
+
+        const {app, BrowserWindow} = require('electron').remote
+        const path = require('path')
+        const url = require('url')
+        const currentWin = require('electron').remote.getCurrentWindow()
+        
+        // 保持一个对于 window 对象的全局引用，如果你不这样做，
+        // 当 JavaScript 对象被垃圾回收， window 会被自动地关闭
+        let dialog
+        
+        function createDialog () {
+            // 创建浏览器窗口。
+            dialog = new BrowserWindow({
+                width: 1200, 
+                height: 800,
+                webPreferences: {
+                    nativeWindowOpen: true
+                },
+                parent: currentWin
+            })
+        
+            // 然后加载应用的 index.html。
+            dialog.loadURL(url.format({
+                pathname: path.join(__dirname, 'component/device_selector_dialog.html'),
+                protocol: 'file:',
+                slashes: true
+            }))
+        
+            // 打开开发者工具。
+            dialog.webContents.openDevTools()
+
+            // 去掉菜单
+            dialog.setMenu(null);
+        
+            // 当 window 被关闭，这个事件会被触发。
+            dialog.on('closed', () => {
+                // 取消引用 window 对象，如果你的应用支持多窗口的话，
+                // 通常会把多个 window 对象存放在一个数组里面，
+                // 与此同时，你应该删除相应的元素。
+                win = null
+            })
+
+            
+        }
+
+        createDialog ()
+
+
     }
 
     function spawnFilePath(fileName) {
