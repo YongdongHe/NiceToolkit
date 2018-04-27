@@ -14,7 +14,7 @@ const {app, BrowserWindow} = require('electron')
       webPreferences: {
         nativeWindowOpen: true
       },
-      // frame:false
+      frame:false
     })
   
     // 然后加载应用的 index.html。

@@ -23,10 +23,18 @@
             </div>
         </div>
         <div id="workspace">
+            <div id="win-draggable-bar">
+            </div>
             <div id="win-operator-box">
-                <img class="drawer-item-icon" src="assets/android.png">
-                <img class="drawer-item-icon" src="assets/android.png">
-                <img class="drawer-item-icon" src="assets/android.png">
+                <div class="win-operator-item" v-on:click="minimizeWin">
+                    <img class="win-operator-icon" src="assets/dot1.png" >
+                </div>
+                <div class="win-operator-item" v-on:click="maximizeWin">
+                    <img class="win-operator-icon" src="assets/dot2.png" >
+                </div>
+                <div class="win-operator-item" v-on:click="closeWin">
+                    <img class="win-operator-icon" src="assets/dot3.png" >
+                </div>
             </div>
             <div id="toolbox">
                 <div id="devices-selector">
@@ -65,6 +73,27 @@
     dotColor: '#6f66dc',
     lineColor: '#6f66dc'
     });
+
+    let winController = new Vue({
+        el: '#win-operator-box',
+        methods:{
+            closeWin:function() {
+                require('electron').remote.getCurrentWindow().close(); 
+            },
+            maximizeWin:function() {
+                let remote = require('electron').remote
+                var window = remote.getCurrentWindow();
+                if (!window.isMaximized()) {
+                    window.maximize();          
+                } else {
+                    window.unmaximize();
+                }
+            },
+            minimizeWin:function() {
+                require('electron').remote.getCurrentWindow().minimize(); 
+            },
+        } 
+    })
 
 
     let app = new Vue({
