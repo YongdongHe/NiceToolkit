@@ -5,79 +5,67 @@
     <meta charset="UTF-8">
     <title>NiceToolKit</title>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="js/particleground.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 
-<body>
-    <div id="test-btn" v-on:click="test">
-        <h1>{{ test_tips }}</h1>
-    </div>
-    <div id="devices-selector">
-        <div v-on:click="refresh">refresh device list</div>
-        <select v-model="selectedDevice"  @change="onDeviceChanged">
-            <option v-for="device in devices" v-bind:value="device.id">{{device.name}}</option>
-        </select>
-        <span>Selected: {{ selectedDevice }}</span>
-    </div>
-
-    <div id="drag-file">
-        <div class="shortcut-item" >
-            <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
+<body style="margin:0px;height:100%">
+    <div id="root">
+        <div class="drawer">
+            <div class="drawer" id="drawer-bg"></div>
+            <H1 id="drawer-title">NiceToolKit</H1>
+            <div id="drawer-list">
+                <div class="drawer-list-item">
+                    <img class="drawer-item-icon" src="assets/android.png">
+                    <p class="drawer-item-text">Android</p>
+                </div>
+            </div>
+        </div>
+        <div id="workspace">
+            <div id="win-operator-box">
+                <img class="drawer-item-icon" src="assets/android.png">
+                <img class="drawer-item-icon" src="assets/android.png">
+                <img class="drawer-item-icon" src="assets/android.png">
+            </div>
+            <div id="toolbox">
+                <div id="devices-selector">
+                        <div v-on:click="refresh">refresh device list</div>
+                        <select v-model="selectedDevice"  @change="onDeviceChanged">
+                            <option v-for="device in devices" v-bind:value="device.id">{{device.name}}</option>
+                        </select>
+                        <span>Selected: {{ selectedDevice }}</span>
+                    </div>
+                
+                    <div id="drag-file">
+                        <div class="shortcut-item" >
+                            <input type="file" multiple="multiple" @change="onFileSelected($event)" class="input-file">
+                        </div>
+                    </div>
+                
+                    <div id="shortcut-box">
+                        <p class="shortcut-item" v-on:click="openSettings">open settings</p>
+                        <p class="shortcut-item" v-on:click="takeScreenshot">screenshot</p>
+                        <p class="shortcut-item" v-on:click="inspectWebview">inspect</p>
+                        <p class="shortcut-item" v-on:click="recordScreen">screenrecord</p>
+                    </div>
+            </div>
+            <div id="preview">
+                <img id="preview-img" v-bind:src="previewImgPath" alt="">
+                <p>{{previewDes}}</p>
+            </div>
         </div>
     </div>
-
-    <div id="shortcut-box">
-        <p class="shortcut-item" v-on:click="openSettings">open settings</p>
-        <p class="shortcut-item" v-on:click="takeScreenshot">screenshot</p>
-        <p class="shortcut-item" v-on:click="inspectWebview">inspect</p>
-        <p class="shortcut-item" v-on:click="recordScreen">screenrecord</p>
-    </div>
-
-
-    <div id="preview">
-        <img id="preview-img" v-bind:src="previewImgPath" alt="">
-        <p>{{previewDes}}</p>
-    </div>
-
-    <a href="chrome://inspect/#devices"></a>
+    
 </body>
-<style>
 
-    .shortcut-item{
-        display: flex;
-        flex-direction: column;
-        background-color: white;
-        color: rgb(130, 130, 207);
-        justify-content:center;
-        align-items:center;
-        font-family: Verdana, Tahoma, sans-serif;
-        width: 300px;
-        height: 100px;
-    }
-
-    .shortcut-item:hover{
-        background-color: rgb(130, 130, 207);
-        color: white;
-    }
-
-    #preview-img{
-        position: absolute;
-        top: 200px;
-        left:300px;
-        width:300px;
-        height:600px;
-    }
-</style>
 
 <script>
-    let test = new Vue({
-        el: '#test-btn',
-        data: {
-            test_tips: 'TEST BUTTON',
-        },
-        methods:{
-            test: test_fn
-        } 
-    })
+    particleground(document.getElementById('drawer-bg'), {
+    dotColor: '#6f66dc',
+    lineColor: '#6f66dc'
+    });
+
 
     let app = new Vue({
         el: '#devices-selector',
@@ -143,7 +131,7 @@
             recordScreen:function(){
         
                 let child_process = require('child_process')
-                let shell = "adb shell screenrecord /sdcard/screen.mp4";
+                console.log(getAdbCmd(app.selectedDevice,""));
                 let adbProcess = child_process.spawn("adb",["shell","screenrecord","/sdcard/demo.mp4"])
                 adbProcess.stdout.on('data', (data) => {
                     console.log(data.toString());
