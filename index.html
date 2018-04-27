@@ -133,14 +133,20 @@
                 });
             },
             takeScreenshot:function(){
+                
+                let adb = requireLocal("js/adb");
+                console.log(adb);
+
                 const electronApp = require('electron').remote.app;
                 let runningPath = electronApp.getAppPath();
                 console.log(runningPath);
                 let pcStoragePath = spawnFilePath("screen" + getCurrentFormatTime() + ".png");
                 console.log(pcStoragePath);
-                let shellScreen = getAdbCmd(app.selectedDevice,"shell screencap -p /sdcard/test.png");
-                let shellPull = getAdbCmd(app.selectedDevice,"pull /sdcard/test.png " + pcStoragePath);
-                runCmdArray([shellScreen,shellPull])
+                let shellScreen = adb.getAdbCmd(app.selectedDevice,"shell screencap -p /sdcard/test.png");
+                let shellPull = adb.getAdbCmd(app.selectedDevice,"pull /sdcard/test.png " + pcStoragePath);
+                
+                
+                adb.runCmdArray([shellScreen,shellPull])
                 .then(function(res){
                     console.log(res);
                     preview.previewImgPath = "";
@@ -196,57 +202,7 @@
         }
     })
 
-    function getAdbCmd(deviceId,cmd){
-        if(deviceId != ""){
-            return "adb -s " + deviceId + " " + cmd;
-        }else{
-            return "adb " +  cmd;
-        }
-       
-    }
-
-
-    function runCmd(cmd) {
-        return new Promise((resolve, reject) => {
-            let exec = require('child_process').exec
-            exec(cmd, function (err, stdout, stderr) {
-                if(err){
-                    reject(stderr);
-                }else{
-                    resolve(stdout);
-                }
-            });
-        });
-    }
-
-     function runCmdArray(cmds) {
-        return new Promise((resolve, reject) => {
-            console.log("runCmdArray");
-            
-            let exec = require('child_process').exec
-            function _runCmds(_cmds){
-                console.log(_cmds);
-                if(_cmds.length <= 0){
-                    resolve("Execute all cmd finished.");
-                    return;
-                }
-                let cmd = _cmds.shift()
-                console.log("exec");
-                console.log(cmd);
-                exec(cmd, function (err, stdout, stderr) {
-                    if(err){
-                        reject(stderr);
-                    }else{
-                        console.log(stdout);
-                        _runCmds(_cmds);
-                    }
-                });
-            }
-            _runCmds(cmds);
-            
-        });
-    }
-
+    
     function test_fn() {
         console.log(app.selectedDevice);
         
@@ -288,8 +244,8 @@
         function createDialog () {
             // 创建浏览器窗口。
             dialog = new BrowserWindow({
-                width: 1200, 
-                height: 800,
+                width: 600, 
+                height: 300,
                 webPreferences: {
                     nativeWindowOpen: true
                 },
@@ -314,7 +270,8 @@
                 // 取消引用 window 对象，如果你的应用支持多窗口的话，
                 // 通常会把多个 window 对象存放在一个数组里面，
                 // 与此同时，你应该删除相应的元素。
-                win = null
+                dialog = null
+                console.log("关闭")
             })
 
             
@@ -356,6 +313,11 @@
             return fmt;
         }
         return data.format("yyyyMMddhhmmss");
+    }
+
+    function requireLocal(localPath){
+        const path = require("path");
+        return require(path.resolve(localPath));
     }
 </script>
 </html>
